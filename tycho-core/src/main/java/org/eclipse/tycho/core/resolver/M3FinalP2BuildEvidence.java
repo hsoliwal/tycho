@@ -51,13 +51,14 @@ public final class M3FinalP2BuildEvidence {
     private M3FinalP2BuildEvidence() { }
 
     public record Snapshot(String groupId, String artifactId, String version,
-            String packaging, String invocation, String eclipseSelected,
+            String packaging, String eclipseProject, String invocation, String eclipseSelected,
             String os, String ws, String arch, int unitCount, String unitsSha256) {
         public Snapshot {
             groupId = valid(groupId, false);
             artifactId = valid(artifactId, false);
             version = valid(version, false);
             packaging = valid(packaging, false);
+            eclipseProject = valid(eclipseProject, false);
             eclipseSelected = valid(eclipseSelected, true);
             os = valid(os, false);
             ws = valid(ws, false);
@@ -83,6 +84,7 @@ public final class M3FinalP2BuildEvidence {
                     + "artifact64\t" + b64(artifactId) + "\n"
                     + "version64\t" + b64(version) + "\n"
                     + "packaging64\t" + b64(packaging) + "\n"
+                    + "eclipseProject64\t" + b64(eclipseProject) + "\n"
                     + "invocation\t" + invocation + "\n"
                     + "eclipseSelected64\t" + b64(eclipseSelected) + "\n"
                     + "os64\t" + b64(os) + "\n"
@@ -103,7 +105,7 @@ public final class M3FinalP2BuildEvidence {
      * platform other than the current host OS/architecture.</p>
      */
     public static Snapshot captureExistingFinal(ReactorProject project,
-            String invocation, String eclipseSelected, String os, String ws,
+            String eclipseProject, String invocation, String eclipseSelected, String os, String ws,
             String arch, IProgressMonitor monitor) {
         Objects.requireNonNull(project, "Tycho source-owner reactor project");
         cancelled(monitor);
@@ -113,7 +115,7 @@ public final class M3FinalP2BuildEvidence {
                     "a resolved FINAL p2 target platform is required; preliminary is insufficient");
         }
         return captureFromFinal(project.getGroupId(), project.getArtifactId(),
-                project.getVersion(), project.getPackaging(), invocation,
+                project.getVersion(), project.getPackaging(), eclipseProject, invocation,
                 eclipseSelected, os, ws, arch, platform.getInstallableUnits(), monitor);
     }
 
@@ -123,7 +125,7 @@ public final class M3FinalP2BuildEvidence {
      * Does not materialize p2 artifacts or ask Tycho to fetch anything.
      */
     static Snapshot captureFromFinal(String groupId, String artifactId,
-            String version, String packaging, String invocation,
+            String version, String packaging, String eclipseProject, String invocation,
             String eclipseSelected, String os, String ws, String arch,
             Collection<IInstallableUnit> units, IProgressMonitor monitor) {
         Objects.requireNonNull(units, "final p2 installable units");
@@ -154,7 +156,7 @@ public final class M3FinalP2BuildEvidence {
             preceding = identity;
         }
         return new Snapshot(groupId, artifactId, version, packaging,
-                invocation, eclipseSelected, os, ws, arch, identities.size(),
+                eclipseProject, invocation, eclipseSelected, os, ws, arch, identities.size(),
                 HexFormat.of().formatHex(sha.digest()));
     }
 
