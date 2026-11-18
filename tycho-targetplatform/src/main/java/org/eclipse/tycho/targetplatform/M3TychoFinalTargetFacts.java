@@ -114,9 +114,11 @@ public final class M3TychoFinalTargetFacts {
             String eclipseProject, String eclipseSelected, String invocation) {
         Objects.requireNonNull(project, "project");
         Objects.requireNonNull(finalPlatform, "finalPlatform");
+        // Access only the *final* context key. Querying a preliminary
+        // context here could evaluate a lazy Tycho target initializer, which
+        // would violate this metadata-only, no-resolution capture contract.
         Object finalCached = project.getContextValue(TargetPlatform.FINAL_TARGET_PLATFORM_KEY);
-        Object preliminary = project.getContextValue(TargetPlatform.PRELIMINARY_TARGET_PLATFORM_KEY);
-        if (finalCached != finalPlatform || preliminary == finalPlatform) {
+        if (finalCached != finalPlatform) {
             throw new IllegalArgumentException("Tycho target platform is not an original final target");
         }
         Set<IInstallableUnit> units = Objects.requireNonNull(
