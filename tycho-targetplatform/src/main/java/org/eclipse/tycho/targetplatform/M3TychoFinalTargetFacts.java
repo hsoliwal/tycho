@@ -9,7 +9,12 @@
  *******************************************************************************/
 package org.eclipse.tycho.targetplatform;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -169,6 +174,42 @@ public final class M3TychoFinalTargetFacts {
                 reactorGroup, reactorArtifact, reactorVersion, reactorPackaging,
                 HexFormat.of().formatHex(md.digest()), keys.length,
                 reactorOrigins, mavenOrigins);
+    }
+
+    /**
+     * Optional explicit export. Original Tycho owns the source reactor, and
+     * only the caller selects a unique generation-local project destination.
+     * Existing different bytes and linked/out-of-project paths are refused.
+     */
+    public static Path writeSnapshot(Snapshot snapshot, Path projectRoot, Path destination)
+            throws IOException {
+        Objects.requireNonNull(snapshot, "snapshot");
+        Path root = Objects.requireNonNull(projectRoot, "projectRoot").toRealPath();
+        Path requested = Objects.requireNonNull(destination, "destination");
+        Path file = (requested.isAbsolute() ? requested : root.resolve(requested)).normalize();
+        if (!file.startsWith(root) || file.equals(root)) {
+            throw new IOException("Tycho final target facts must stay inside original project");
+        }
+        for (Path cursor = file; cursor != null && cursor.startsWith(root); cursor = cursor.getParent()) {
+            if (Files.isSymbolicLink(cursor)) {
+                throw new IOException("Tycho target facts destination contains a symlink");
+            }
+        }
+        if (!Files.isDirectory(file.getParent(), LinkOption.NOFOLLOW_LINKS)) {
+            throw new IOException("Tycho source-owner target output parent must exist");
+        }
+        byte[] original = snapshot.toExchangeBytes();
+        if (Files.exists(file, LinkOption.NOFOLLOW_LINKS)) {
+            if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)
+                    || Files.size(file) != original.length
+                    || !Arrays.equals(Files.readAllBytes(file), original)) {
+                throw new IOException("refusing conflicting original Tycho target generation");
+            }
+            return file;
+        }
+        Files.write(file, original, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE,
+                LinkOption.NOFOLLOW_LINKS);
+        return file;
     }
 
     private static String valid(String value, boolean empty) {
