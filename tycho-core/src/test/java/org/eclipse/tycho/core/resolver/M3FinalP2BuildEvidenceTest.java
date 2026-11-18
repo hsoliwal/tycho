@@ -51,7 +51,7 @@ class M3FinalP2BuildEvidenceTest {
         when(finalP2.getInstallableUnits()).thenReturn(Set.of(a, b));
         ReactorProject project = reactor(finalP2);
         var source = M3FinalP2BuildEvidence.captureExistingFinal(
-                project, INVOCATION, "Debug", "linux", "gtk", "x86_64", null);
+                project, "EclipsePDE", INVOCATION, "Debug", "linux", "gtk", "x86_64", null);
         assertEquals(2, source.unitCount());
         assertEquals("linux", source.os());
         assertEquals("gtk", source.ws());
@@ -59,17 +59,17 @@ class M3FinalP2BuildEvidenceTest {
         assertTrue(source.unitsSha256().matches("[a-f0-9]{64}"));
         assertFalse(source.authorizesBuildSkipping());
         assertArrayEquals(source.toExchangeBytes(), M3FinalP2BuildEvidence.captureExistingFinal(
-                project, INVOCATION, "Debug", "linux", "gtk", "x86_64", null).toExchangeBytes());
+                project, "EclipsePDE", INVOCATION, "Debug", "linux", "gtk", "x86_64", null).toExchangeBytes());
         assertTrue(new String(source.toExchangeBytes(), StandardCharsets.UTF_8)
                 .startsWith(M3FinalP2BuildEvidence.SCHEMA + "\nprovider\ttycho.p2\n"));
 
         // P2TargetPlatform returns a Set; identity must not depend on input order.
         var reordered = M3FinalP2BuildEvidence.captureFromFinal(
-                "org.example", "pde", "1.0.0", "eclipse-plugin", INVOCATION,
+                "org.example", "pde", "1.0.0", "eclipse-plugin", "EclipsePDE", INVOCATION,
                 "Debug", "linux", "gtk", "x86_64", List.of(b, a), null);
         assertEquals(source.unitsSha256(), reordered.unitsSha256());
         var changed = M3FinalP2BuildEvidence.captureFromFinal(
-                "org.example", "pde", "1.0.0", "eclipse-plugin", INVOCATION,
+                "org.example", "pde", "1.0.0", "eclipse-plugin", "EclipsePDE", INVOCATION,
                 "Debug", "linux", "gtk", "x86_64",
                 List.of(a, unit("org.eclipse.jdt.core", "3.41.0")), null);
         assertNotEquals(source.unitsSha256(), changed.unitsSha256());
@@ -83,12 +83,12 @@ class M3FinalP2BuildEvidenceTest {
                 .thenReturn(preliminary);
         assertThrows(IllegalArgumentException.class,
                 () -> M3FinalP2BuildEvidence.captureExistingFinal(
-                        reactor, INVOCATION, "Debug", "linux", "gtk", "x86_64", null));
+                        reactor, "EclipsePDE", INVOCATION, "Debug", "linux", "gtk", "x86_64", null));
         IInstallableUnit same = unit("org.eclipse.swt", "3.130.0");
         assertThrows(IllegalArgumentException.class,
                 () -> M3FinalP2BuildEvidence.captureFromFinal(
                         "org.example", "pde", "1.0.0", "eclipse-plugin",
-                        INVOCATION, "Debug", "linux", "gtk", "x86_64",
+                        "EclipsePDE", INVOCATION, "Debug", "linux", "gtk", "x86_64",
                         List.of(same, same), null));
     }
 
@@ -99,10 +99,10 @@ class M3FinalP2BuildEvidenceTest {
         assertThrows(OperationCanceledException.class,
                 () -> M3FinalP2BuildEvidence.captureFromFinal(
                         "org.example", "pde", "1.0.0", "eclipse-plugin",
-                        INVOCATION, "Debug", "linux", "gtk", "x86_64",
+                        "EclipsePDE", INVOCATION, "Debug", "linux", "gtk", "x86_64",
                         List.of(unit("org.eclipse.swt", "3.130.0")), monitor));
         var first = new M3FinalP2BuildEvidence.Snapshot("org.example", "pde",
-                "1.0.0", "eclipse-plugin", INVOCATION, "Debug",
+                "1.0.0", "eclipse-plugin", "EclipsePDE", INVOCATION, "Debug",
                 "linux", "gtk", "x86_64", 2, "a".repeat(64));
         Path parent = Files.createDirectories(temporary.resolve("target/ide"));
         Path packet = M3FinalP2BuildEvidence.writeSnapshot(first, temporary,
@@ -112,7 +112,7 @@ class M3FinalP2BuildEvidenceTest {
         assertEquals(packet, M3FinalP2BuildEvidence.writeSnapshot(first, temporary,
                 Path.of("target/ide/tycho-final-p2-facts.ide")));
         var other = new M3FinalP2BuildEvidence.Snapshot("org.example", "pde",
-                "1.0.0", "eclipse-plugin", INVOCATION, "Release",
+                "1.0.0", "eclipse-plugin", "EclipsePDE", INVOCATION, "Release",
                 "linux", "gtk", "x86_64", 2, "b".repeat(64));
         assertThrows(IOException.class, () -> M3FinalP2BuildEvidence.writeSnapshot(
                 other, temporary, Path.of("target/ide/tycho-final-p2-facts.ide")));
@@ -123,7 +123,7 @@ class M3FinalP2BuildEvidenceTest {
     @Test
     void originalWireMatchesIndependentMavenFixture() throws IOException {
         var source = new M3FinalP2BuildEvidence.Snapshot("org.example", "pde",
-                "1.0.0", "eclipse-plugin", INVOCATION, "Debug",
+                "1.0.0", "eclipse-plugin", "EclipsePDE", INVOCATION, "Debug",
                 "linux", "gtk", "x86_64", 2, "a".repeat(64));
         try (var in = getClass().getResourceAsStream("/m3-tycho-final-p2-facts-v1.fixture")) {
             if (in == null) throw new IOException("missing Maven/Tycho final p2 fixture");
