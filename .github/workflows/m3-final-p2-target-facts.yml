@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the Synexia Project
+# SPDX-License-Identifier: EPL-2.0
+name: M3 original Tycho FINAL p2 target facts acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tycho-targetplatform/src/main/java/org/eclipse/tycho/targetplatform/M3TychoFinalTargetFacts.java'
+      - 'tycho-core/src/test/java/org/eclipse/tycho/targetplatform/M3TychoFinalTargetFactsTest.java'
+      - 'tycho-core/src/test/resources/m3-tycho-final-target-facts-v1.fixture'
+      - 'tools/m3/M3TychoTestReceiptMain.java'
+      - '.github/workflows/m3-final-p2-target-facts.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tycho-targetplatform/src/main/java/org/eclipse/tycho/targetplatform/M3TychoFinalTargetFacts.java'
+      - 'tycho-core/src/test/java/org/eclipse/tycho/targetplatform/M3TychoFinalTargetFactsTest.java'
+      - '.github/workflows/m3-final-p2-target-facts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-final-p2-owner:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - uses: stCarolas/setup-maven@12eb41b233df95d49b0c11fc1b5bc8312e5d4ce0 # v5.1
+        with:
+          maven-version: 3.10.1
+      - name: Verify the original Tycho reactor's FINAL target owner tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -V -ntp -pl tycho-core -am test \
+            -Dtest=M3TychoFinalTargetFactsTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dmaven.test.failure.ignore=false \
+            -DskipTests=false
+      - name: Require five exact original final-p2 owner tests with no skips
+        shell: bash
+        run: |
+          set -euo pipefail
+          java tools/m3/M3TychoTestReceiptMain.java \
+            tycho-core/target/surefire-reports
+      - name: Retain native final p2 test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: original-tycho-final-p2-jdk25
+          path: |
+            tycho-core/target/surefire-reports/**
+            tycho-targetplatform/target/surefire-reports/**
+          if-no-files-found: ignore
+          retention-days: 14
