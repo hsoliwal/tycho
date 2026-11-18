@@ -138,7 +138,7 @@ public final class M3FinalP2BuildEvidence {
             String id = valid(iu.getId(), false);
             String iuVersion = valid(
                     Objects.requireNonNull(iu.getVersion(), "final p2 unit version").toString(), false);
-            identities.add(id + "\u0000" + iuVersion);
+            identities.add(id + '\0' + iuVersion);
         }
         identities.sort(String::compareTo);
         MessageDigest sha = digest();
