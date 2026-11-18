@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the Synexia Project
+# SPDX-License-Identifier: EPL-2.0
+name: M3 Tycho original FINAL p2 target facts acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tycho-core/src/main/java/org/eclipse/tycho/core/resolver/M3FinalP2BuildEvidence.java'
+      - 'tycho-core/src/test/java/org/eclipse/tycho/core/resolver/M3FinalP2BuildEvidenceTest.java'
+      - 'tycho-core/src/test/resources/m3-tycho-final-p2-facts-v1.fixture'
+      - '.github/workflows/m3-tycho-final-p2-facts.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tycho-core/src/main/java/org/eclipse/tycho/core/resolver/M3FinalP2BuildEvidence.java'
+      - 'tycho-core/src/test/java/org/eclipse/tycho/core/resolver/M3FinalP2BuildEvidenceTest.java'
+      - '.github/workflows/m3-tycho-final-p2-facts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolved-final-p2:
+    name: Tycho original resolver tests (JDK 25)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - uses: stCarolas/setup-maven@12eb41b233df95d49b0c11fc1b5bc8312e5d4ce0 # v5.1
+        with:
+          maven-version: 3.10.1
+      - name: Execute original Tycho final-p2 facts JUnit cases with dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn --batch-mode --no-transfer-progress \
+            -pl tycho-core -am test \
+            -Dtest=M3FinalP2BuildEvidenceTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dmaven.test.failure.ignore=false
+      - name: Require all four original Tycho cases with no skips or errors
+        shell: bash
+        run: |
+          set -euo pipefail
+          report=tycho-core/target/surefire-reports/TEST-org.eclipse.tycho.core.resolver.M3FinalP2BuildEvidenceTest.xml
+          test -s "$report"
+          grep -Eq 'tests="4"' "$report"
+          grep -Eq 'skipped="0"' "$report"
+          grep -Eq 'failures="0"' "$report"
+          grep -Eq 'errors="0"' "$report"
+          grep -Eq '<testcase ' "$report"
+      - name: Keep original Tycho evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: m3-tycho-original-final-p2-jdk25
+          path: |
+            tycho-core/target/surefire-reports/**
+          if-no-files-found: ignore
+          retention-days: 14
