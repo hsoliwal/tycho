@@ -16,15 +16,12 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +38,7 @@ public class M3TychoFinalTargetFactsTest {
     @TempDir Path root;
 
     @Test
-    public void originalFinalTargetOnlyWithoutPreliminaryOrNetworkResolution() {
+    public void originalFinalTargetOnlyWithoutPreliminaryOrNetworkResolution() throws Exception {
         ReactorProject project = mock(ReactorProject.class);
         P2TargetPlatform finalTarget = mock(P2TargetPlatform.class);
         when(project.getContextValue(TargetPlatform.FINAL_TARGET_PLATFORM_KEY)).thenReturn(finalTarget);
