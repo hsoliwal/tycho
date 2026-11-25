@@ -1,0 +1,2 @@
+# Byte-exact wire fixture compared with assertArrayEquals: keep LF on every checkout.
+m3-tycho-final-p2-facts-v1.fixture -text

@@ -107,7 +107,9 @@ class M3FinalP2BuildEvidenceTest {
         Path parent = Files.createDirectories(temporary.resolve("target/ide"));
         Path packet = M3FinalP2BuildEvidence.writeSnapshot(first, temporary,
                 Path.of("target/ide/tycho-final-p2-facts.ide"));
-        assertEquals(parent.resolve("tycho-final-p2-facts.ide"), packet);
+        // writeSnapshot resolves the project root with toRealPath(); compare against the
+        // same canonical form (Windows 8.3 temp names, macOS /var -> /private/var).
+        assertEquals(parent.toRealPath().resolve("tycho-final-p2-facts.ide"), packet);
         assertArrayEquals(first.toExchangeBytes(), Files.readAllBytes(packet));
         assertEquals(packet, M3FinalP2BuildEvidence.writeSnapshot(first, temporary,
                 Path.of("target/ide/tycho-final-p2-facts.ide")));
